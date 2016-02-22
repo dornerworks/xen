@@ -41,6 +41,7 @@
 #include <xen/pfn.h>
 
 struct domain *dom_xen, *dom_io, *dom_cow;
+static struct domain *get_pg_owner(domid_t domid);
 
 /* Static start-of-day pagetables that we use before the allocators
  * are up. These are used by all CPUs during bringup before switching
@@ -1052,6 +1053,8 @@ int xenmem_add_to_physmap_one(
     p2m_type_t t;
     struct page_info *page = NULL;
 
+    printk("Enter xenmem_add_to_physmap_one()\n");
+
     switch ( space )
     {
     case XENMAPSPACE_grant_table:
@@ -1099,7 +1102,9 @@ int xenmem_add_to_physmap_one(
     {
         struct domain *od;
         p2m_type_t p2mt;
-        od = rcu_lock_domain_by_any_id(foreign_domid);
+        printk("Enter get_pg_owner()\n");
+        od = get_pg_owner(foreign_domid);
+
         if ( od == NULL )
             return -ESRCH;
 
@@ -1121,18 +1126,22 @@ int xenmem_add_to_physmap_one(
         page = get_page_from_gfn(od, idx, &p2mt, P2M_ALLOC);
         if ( !page )
         {
+            printk("xenmem_add_to_physmap_one page null\n");
             rcu_unlock_domain(od);
             return -EINVAL;
         }
 
         if ( !p2m_is_ram(p2mt) )
         {
+            printk("xenmem_add_to_physmap_one is ram\n");
             put_page(page);
             rcu_unlock_domain(od);
             return -EINVAL;
         }
 
+printk("xenmem_add_to_physmap_one page_to_mfn start");
         mfn = page_to_mfn(page);
+        printk("xenmem_add_to_physmap_one page_to_mfn done");
         t = p2m_map_foreign;
 
         rcu_unlock_domain(od);
@@ -1143,9 +1152,10 @@ int xenmem_add_to_physmap_one(
         return -ENOSYS;
     }
 
+printk("xenmem_add_to_physmap_one guest_physmap_add_entry start");
     /* Map at new location. */
     rc = guest_physmap_add_entry(d, gpfn, mfn, 0, t);
-
+printk("xenmem_add_to_physmap_one guest_physmap_add_entry done");
     /* If we fail to add the mapping, we need to drop the reference we
      * took earlier on foreign pages */
     if ( rc && space == XENMAPSPACE_gmfn_foreign )
@@ -1310,6 +1320,44 @@ void clear_and_clean_page(struct page_info *page)
     clear_page(p);
     clean_dcache_va_range(p, PAGE_SIZE);
     unmap_domain_page(p);
+}
+
+static struct domain *get_pg_owner(domid_t domid)
+{
+    struct domain *pg_owner = NULL, *curr = current->domain;
+
+    if ( likely(domid == DOMID_SELF) )
+    {
+        pg_owner = rcu_lock_current_domain();
+        goto out;
+    }
+
+    if ( unlikely(domid == curr->domain_id) )
+    {
+        printk("Cannot specify itself as foreign domain");
+        goto out;
+    }
+
+    switch ( domid )
+    {
+    case DOMID_IO:
+        pg_owner = rcu_lock_domain(dom_io);
+        break;
+    case DOMID_XEN:
+        printk("DOM_XEN Selected\n");
+        pg_owner = rcu_lock_domain(dom_xen);
+        break;
+    default:
+        if ( (pg_owner = rcu_lock_domain_by_id(domid)) == NULL )
+        {
+            printk("Unknown domain '%u'", domid);
+            break;
+        }
+        break;
+    }
+
+ out:
+    return pg_owner;
 }
 
 /*
