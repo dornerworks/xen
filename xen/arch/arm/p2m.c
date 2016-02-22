@@ -228,10 +228,23 @@ paddr_t p2m_lookup(struct domain *d, paddr_t paddr, p2m_type_t *t)
     paddr_t ret;
     struct p2m_domain *p2m = &d->arch.p2m;
 
-    spin_lock(&p2m->lock);
-    ret = __p2m_lookup(d, paddr, t);
-    spin_unlock(&p2m->lock);
+    printk("p2m lookup enter\n");
 
+    if(d->domain_id != DOMID_XEN)
+    {
+        printk("p2m lookup DOM_XEN Not Selected\n");
+        spin_lock(&p2m->lock);
+        ret = __p2m_lookup(d, paddr, t);
+        spin_unlock(&p2m->lock);
+    }
+    else
+    {
+        
+        *t = p2m_grant_map_rw;
+        printk("p2m lookup DOM_XEN Selected: mfn %llu, type set to %d\n", (long long unsigned  int)paddr, *t);
+        ret = paddr;
+    }
+    
     return ret;
 }
 
