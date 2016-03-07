@@ -35,6 +35,7 @@
 #include <xen/cpu.h>
 #include <xen/pfn.h>
 #include <xen/vmap.h>
+#include <xen/trace.h>
 #include <xen/libfdt/libfdt.h>
 #include <asm/page.h>
 #include <asm/current.h>
@@ -843,6 +844,8 @@ void __init start_xen(unsigned long boot_phys_offset,
 
     /* Scrub RAM that is still free and so may go to an unprivileged domain. */
     scrub_heap_pages();
+
+    init_trace_bufs();
 
     init_constructors();
 
