@@ -228,7 +228,6 @@ paddr_t p2m_lookup(struct domain *d, paddr_t paddr, p2m_type_t *t)
     paddr_t ret;
     struct p2m_domain *p2m = &d->arch.p2m;
 
-
     if(d->domain_id != DOMID_XEN)
     {
         spin_lock(&p2m->lock);
