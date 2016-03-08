@@ -6,10 +6,11 @@
     DT_MATCH_COMPATIBLE("arm,armv8-timer")
 
 typedef unsigned long cycles_t;
+uint64_t get_s_ticks(void);
 
 static inline cycles_t get_cycles (void)
 {
-        return (cycles_t)get_s_time();
+        return (cycles_t) get_s_ticks();
 }
 
 /* List of timer's IRQ */
