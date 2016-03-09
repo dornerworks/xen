@@ -90,6 +90,8 @@ allow dom0_t dom0_t:domain2 {
 };
 allow dom0_t dom0_t:resource { add remove };
 
+allow dom0_t domxen_t:mmu { memorymap map_write };
+
 # These permissions allow using the FLASK security server to compute access
 # checks locally, which could be used by a domain or service (such as xenstore)
 # that does not have its own security server to make access decisions based on
