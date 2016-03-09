@@ -1134,7 +1134,7 @@ int xenmem_add_to_physmap_one(
             return -EINVAL;
         }
 
-        if(od->domain_id != DOMID_XEN)
+        if(DOMID_XEN !=od->domain_id)
         {
             mfn = page_to_mfn(page);
         }

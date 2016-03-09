@@ -1,16 +1,20 @@
 #ifndef __ARM_TIME_H__
 #define __ARM_TIME_H__
 
+#include <asm/regs.h>
+
 #define DT_MATCH_TIMER                      \
     DT_MATCH_COMPATIBLE("arm,armv7-timer"), \
     DT_MATCH_COMPATIBLE("arm,armv8-timer")
 
-typedef unsigned long cycles_t;
-uint64_t get_s_ticks(void);
+/* Counter value at boot time */
+extern uint64_t boot_count;
+
+typedef uint64_t cycles_t;
 
 static inline cycles_t get_cycles (void)
 {
-        return (cycles_t) get_s_ticks();
+        return READ_SYSREG64(CNTPCT_EL0) - boot_count;
 }
 
 /* List of timer's IRQ */
@@ -34,9 +38,6 @@ unsigned int timer_get_irq(enum timer_ppi ppi);
 
 /* Set up the timer interrupt on this CPU */
 extern void init_timer_interrupt(void);
-
-/* Counter value at boot time */
-extern uint64_t boot_count;
 
 extern s_time_t ticks_to_ns(uint64_t ticks);
 extern uint64_t ns_to_ticks(s_time_t ns);
