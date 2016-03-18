@@ -14,6 +14,7 @@ typedef uint64_t cycles_t;
 
 static inline cycles_t get_cycles (void)
 {
+        /* return raw tick count of main timer */
         return READ_SYSREG64(CNTPCT_EL0) - boot_count;
 }
 
