@@ -1134,6 +1134,8 @@ int xenmem_add_to_physmap_one(
             return -EINVAL;
         }
 
+        /* If DOMID_XEN then no page to MFN translation is 
+        needed as we already have the MFN directly */
         if(DOMID_XEN !=od->domain_id)
         {
             mfn = page_to_mfn(page);
@@ -1155,6 +1157,7 @@ int xenmem_add_to_physmap_one(
 
     /* Map at new location. */
     rc = guest_physmap_add_entry(d, gpfn, mfn, 0, t);
+
     /* If we fail to add the mapping, we need to drop the reference we
      * took earlier on foreign pages */
     if ( rc && space == XENMAPSPACE_gmfn_foreign )
@@ -1321,6 +1324,9 @@ void clear_and_clean_page(struct page_info *page)
     unmap_domain_page(p);
 }
 
+/* Ported from x86 architecture: checks for special domain requests for
+DOMID_XEN or DOMID_IO which must be handled differently then guest domain 
+requests */
 static struct domain *get_pg_owner(domid_t domid)
 {
     struct domain *pg_owner = NULL, *curr = current->domain;
@@ -1336,6 +1342,8 @@ static struct domain *get_pg_owner(domid_t domid)
         goto out;
     }
 
+    /* check for special domain cases of DOMID_IO or DOMID_XEN which
+    must use rcu_lock_domain() and dom_xen/dom_io as the domid_t */
     switch ( domid )
     {
     case DOMID_IO:
