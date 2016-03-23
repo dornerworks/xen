@@ -9,8 +9,8 @@ LDLIBS += $(LDLIBS_libxenevtchn)
 LDLIBS += $(LDLIBS_libxenctrl)
 LDLIBS += $(ARGP_LDFLAGS)
 
-BIN      = $(BIN-y)
-SBIN     = xenalyze xentrace xentrace_setsize 
+BIN      = xenalyze
+SBIN     = xentrace xentrace_setsize 
 LIBBIN   = xenctx
 SCRIPTS  = xentrace_format
 
