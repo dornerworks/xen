@@ -228,9 +228,6 @@ paddr_t p2m_lookup(struct domain *d, paddr_t paddr, p2m_type_t *t)
     paddr_t ret;
     struct p2m_domain *p2m = &d->arch.p2m;
 
-    /* Check for DOMID_XEN: If we are called with DOMID_XEN (from xentrace)
-    then paddr is already a MFN and no translation is needed. We only set the 
-    page type as p2m_raw_rw and return the MFN directly */
     if(DOMID_XEN != d->domain_id)
     {
         spin_lock(&p2m->lock);
