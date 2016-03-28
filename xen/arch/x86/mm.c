@@ -2880,54 +2880,6 @@ int new_guest_cr3(unsigned long mfn)
     return rc;
 }
 
-static struct domain *get_pg_owner(domid_t domid)
-{
-    struct domain *pg_owner = NULL, *curr = current->domain;
-
-    if ( likely(domid == DOMID_SELF) )
-    {
-        pg_owner = rcu_lock_current_domain();
-        goto out;
-    }
-
-    if ( unlikely(domid == curr->domain_id) )
-    {
-        MEM_LOG("Cannot specify itself as foreign domain");
-        goto out;
-    }
-
-    if ( !is_pvh_domain(curr) && unlikely(paging_mode_translate(curr)) )
-    {
-        MEM_LOG("Cannot mix foreign mappings with translated domains");
-        goto out;
-    }
-
-    switch ( domid )
-    {
-    case DOMID_IO:
-        pg_owner = rcu_lock_domain(dom_io);
-        break;
-    case DOMID_XEN:
-        pg_owner = rcu_lock_domain(dom_xen);
-        break;
-    default:
-        if ( (pg_owner = rcu_lock_domain_by_id(domid)) == NULL )
-        {
-            MEM_LOG("Unknown domain '%u'", domid);
-            break;
-        }
-        break;
-    }
-
- out:
-    return pg_owner;
-}
-
-static void put_pg_owner(struct domain *pg_owner)
-{
-    rcu_unlock_domain(pg_owner);
-}
-
 static inline int vcpumask_to_pcpumask(
     struct domain *d, XEN_GUEST_HANDLE_PARAM(const_void) bmap, cpumask_t *pmask)
 {
