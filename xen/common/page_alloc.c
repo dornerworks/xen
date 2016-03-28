@@ -145,6 +145,7 @@
 #ifdef CONFIG_X86
 #include <asm/p2m.h>
 #include <asm/setup.h> /* for highmem_start only */
+#include <asm/paging.h>
 #else
 #define p2m_pod_offline_or_broken_hit(pg) 0
 #define p2m_pod_offline_or_broken_replace(pg) BUG_ON(pg != NULL)
@@ -1995,6 +1996,56 @@ static __init int register_heap_trigger(void)
     return 0;
 }
 __initcall(register_heap_trigger);
+
+struct domain *get_pg_owner(domid_t domid)
+{
+    struct domain *pg_owner = NULL, *curr = current->domain;
+
+    if ( likely(domid == DOMID_SELF) )
+    {
+        pg_owner = rcu_lock_current_domain();
+        goto out;
+    }
+
+    if ( unlikely(domid == curr->domain_id) )
+    {
+        gdprintk(XENLOG_WARNING,"Cannot specify itself as foreign domain");
+        goto out;
+    }
+
+#ifdef CONFIG_X86
+    if ( !is_pvh_domain(curr) && unlikely(paging_mode_translate(curr)) )
+    {
+        gdprintk(XENLOG_WARNING,"Cannot mix foreign mappings with translated domains");
+        goto out;
+    }
+#endif
+
+    switch ( domid )
+    {
+    case DOMID_IO:
+        pg_owner = rcu_lock_domain(dom_io);
+        break;
+    case DOMID_XEN:
+        pg_owner = rcu_lock_domain(dom_xen);
+        break;
+    default:
+        if ( (pg_owner = rcu_lock_domain_by_id(domid)) == NULL )
+        {
+            gdprintk(XENLOG_WARNING,"Unknown domain '%u'", domid);
+            break;
+        }
+        break;
+    }
+
+ out:
+    return pg_owner;
+}
+
+void put_pg_owner(struct domain *pg_owner)
+{
+    rcu_unlock_domain(pg_owner);
+}
 
 /*
  * Local variables:
