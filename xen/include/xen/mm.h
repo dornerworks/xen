@@ -84,6 +84,7 @@ void put_page(struct page_info *);
 int get_page(struct page_info *, struct domain *);
 struct domain *__must_check page_get_owner_and_reference(struct page_info *);
 
+
 /* Boot-time allocator. Turns into generic allocator after bootstrap. */
 void init_boot_pages(paddr_t ps, paddr_t pe);
 unsigned long alloc_boot_pages(
@@ -446,6 +447,8 @@ void scrub_one_page(struct page_info *);
 int xenmem_add_to_physmap_one(struct domain *d, unsigned int space,
                               domid_t foreign_domid,
                               unsigned long idx, xen_pfn_t gpfn);
+struct domain *get_pg_owner(domid_t domid);
+void put_pg_owner(struct domain *pg_owner);
 
 /* Returns 1 on success, 0 on error, negative if the ring
  * for event propagation is full in the presence of paging */
