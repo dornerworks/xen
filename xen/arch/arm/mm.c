@@ -41,7 +41,6 @@
 #include <xen/pfn.h>
 
 struct domain *dom_xen, *dom_io, *dom_cow;
-static struct domain *get_pg_owner(domid_t domid);
 
 /* Static start-of-day pagetables that we use before the allocators
  * are up. These are used by all CPUs during bringup before switching
@@ -1134,16 +1133,7 @@ int xenmem_add_to_physmap_one(
             return -EINVAL;
         }
 
-        /* If DOMID_XEN then no page to MFN translation is 
-        needed as we already have the MFN directly */
-        if(DOMID_XEN !=od->domain_id)
-        {
-            mfn = page_to_mfn(page);
-        }
-        else
-        {
-            mfn = idx;
-        }
+        mfn = page_to_mfn(page);
 
         t = p2m_map_foreign;
 
@@ -1322,46 +1312,6 @@ void clear_and_clean_page(struct page_info *page)
     clear_page(p);
     clean_dcache_va_range(p, PAGE_SIZE);
     unmap_domain_page(p);
-}
-
-/* Ported from x86 architecture: checks for special domain requests for
-DOMID_XEN or DOMID_IO which must be handled differently then guest domain 
-requests */
-static struct domain *get_pg_owner(domid_t domid)
-{
-    struct domain *pg_owner = NULL, *curr = current->domain;
-
-    if ( likely(domid == DOMID_SELF) )
-    {
-        pg_owner = rcu_lock_current_domain();
-        goto out;
-    }
-
-    if ( unlikely(domid == curr->domain_id) )
-    {
-        goto out;
-    }
-
-    /* check for special domain cases of DOMID_IO or DOMID_XEN which
-    must use rcu_lock_domain() and dom_xen/dom_io as the domid_t */
-    switch ( domid )
-    {
-    case DOMID_IO:
-        pg_owner = rcu_lock_domain(dom_io);
-        break;
-    case DOMID_XEN:
-        pg_owner = rcu_lock_domain(dom_xen);
-        break;
-    default:
-        if ( (pg_owner = rcu_lock_domain_by_id(domid)) == NULL )
-        {
-            break;
-        }
-        break;
-    }
-
- out:
-    return pg_owner;
 }
 
 /*
