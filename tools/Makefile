@@ -11,6 +11,7 @@ SUBDIRS-y += misc
 SUBDIRS-y += examples
 SUBDIRS-y += hotplug
 SUBDIRS-y += xentrace
+SUBDIRS-y += a653_sched
 SUBDIRS-$(CONFIG_XCUTILS) += xcutils
 SUBDIRS-$(CONFIG_X86) += firmware
 SUBDIRS-y += console
