@@ -227,8 +227,18 @@ paddr_t p2m_lookup(struct domain *d, paddr_t paddr, p2m_type_t *t)
 {
     paddr_t ret;
     struct p2m_domain *p2m = &d->arch.p2m;
+    struct page_info *page;
+    unsigned long mfn;
 
-    if(DOMID_XEN != d->domain_id)
+    /*
+    * DOMID_XEN Check for ARM 
+    *
+    * DOMID_XEN is considered a PV guest on x86 (i.e MFN == GFN), but
+    * on ARM there is no such concept. Thus requests to DOMID_XEN
+    * on ARM use a MFN address directly and do not need translation 
+    * from PFN.
+    */
+    if ( DOMID_XEN != d->domain_id )
     {
         spin_lock(&p2m->lock);
         ret = __p2m_lookup(d, paddr, t);
@@ -236,7 +246,17 @@ paddr_t p2m_lookup(struct domain *d, paddr_t paddr, p2m_type_t *t)
     }
     else
     {
-        *t = p2m_ram_rw;
+        /* retrieve the page to determine read/write or read only mapping */
+        mfn = paddr >> PAGE_SHIFT;
+        if ( mfn_valid(mfn) )
+        {
+            page = mfn_to_page(mfn);
+            *t = (page->u.inuse.type_info == PGT_writable_page ? 
+                                p2m_ram_rw : p2m_ram_ro);
+        }
+        else
+            *t = p2m_invalid;
+
         ret = paddr;
     }
     
