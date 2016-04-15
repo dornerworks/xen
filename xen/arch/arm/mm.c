@@ -1106,14 +1106,14 @@ int xenmem_add_to_physmap_one(
 
         if ( od == d )
         {
-            rcu_unlock_domain(od);
+            put_pg_owner(od);
             return -EINVAL;
         }
 
         rc = xsm_map_gmfn_foreign(XSM_TARGET, d, od);
         if ( rc )
         {
-            rcu_unlock_domain(od);
+            put_pg_owner(od);
             return rc;
         }
 
@@ -1122,22 +1122,21 @@ int xenmem_add_to_physmap_one(
         page = get_page_from_gfn(od, idx, &p2mt, P2M_ALLOC);
         if ( !page )
         {
-            rcu_unlock_domain(od);
+            put_pg_owner(od);
             return -EINVAL;
         }
 
         if ( !p2m_is_ram(p2mt) )
         {
             put_page(page);
-            rcu_unlock_domain(od);
+            put_pg_owner(od);
             return -EINVAL;
         }
 
         mfn = page_to_mfn(page);
-
         t = p2m_map_foreign;
 
-        rcu_unlock_domain(od);
+        put_pg_owner(od);
         break;
     }
 
