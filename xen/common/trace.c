@@ -344,6 +344,9 @@ void __init init_trace_bufs(void)
     cpumask_setall(&tb_cpu_mask);
     register_cpu_notifier(&cpu_nfb);
 
+    printk("xentrace: opt_tbuf_size = %d\n", opt_tbuf_size);
+    printk("xentrace: opt_tevt_mask = %d\n", opt_tevt_mask);
+
     if ( opt_tbuf_size )
     {
         if ( alloc_trace_bufs(opt_tbuf_size) )
@@ -681,6 +684,7 @@ static DECLARE_SOFTIRQ_TASKLET(trace_notify_dom0_tasklet,
 void __trace_var(u32 event, bool_t cycles, unsigned int extra,
                  const void *extra_data)
 {
+    
     struct t_buf *buf;
     unsigned long flags;
     u32 bytes_to_tail, bytes_to_wrap;
