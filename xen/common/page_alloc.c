@@ -2009,14 +2009,14 @@ struct domain *get_pg_owner(domid_t domid)
 
     if ( unlikely(domid == curr->domain_id) )
     {
-        gdprintk(XENLOG_WARNING, "Cannot specify itself as foreign domain");
+        gdprintk(XENLOG_WARNING,"Cannot specify itself as foreign domain");
         goto out;
     }
 
 #ifdef CONFIG_X86
     if ( !is_pvh_domain(curr) && unlikely(paging_mode_translate(curr)) )
     {
-        gdprintk(XENLOG_WARNING, "Cannot mix foreign mappings with translated domains");
+        gdprintk(XENLOG_WARNING,"Cannot mix foreign mappings with translated domains");
         goto out;
     }
 #endif
@@ -2032,7 +2032,7 @@ struct domain *get_pg_owner(domid_t domid)
     default:
         if ( (pg_owner = rcu_lock_domain_by_id(domid)) == NULL )
         {
-            gdprintk(XENLOG_WARNING, "Unknown domain 'd%d'", domid);
+            gdprintk(XENLOG_WARNING,"Unknown domain '%u'", domid);
             break;
         }
         break;
