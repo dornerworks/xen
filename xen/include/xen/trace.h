@@ -62,12 +62,33 @@ void __trace_hypercall(uint32_t event, unsigned long op,
             __trace_var(_e, 1, sizeof(_d), _d);                 \
         }                                                       \
     } while ( 0 )
- 
+
+#define TRACE_1D_64(_e,d1)                                      \
+    do {                                                        \
+        if ( unlikely(tb_init_done) )                           \
+        {                                                       \
+            u64 _d[1];                                          \
+            _d[0] = d1;                                         \
+            __trace_var(_e, 1, sizeof(_d), _d);                 \
+        }                                                       \
+    } while ( 0 )
+
 #define TRACE_2D(_e,d1,d2)                                      \
     do {                                                        \
         if ( unlikely(tb_init_done) )                           \
         {                                                       \
             u32 _d[2];                                          \
+            _d[0] = d1;                                         \
+            _d[1] = d2;                                         \
+            __trace_var(_e, 1, sizeof(_d), _d);                 \
+        }                                                       \
+    } while ( 0 )
+
+#define TRACE_2D_64(_e,d1,d2)                                   \
+    do {                                                        \
+        if ( unlikely(tb_init_done) )                           \
+        {                                                       \
+            u64 _d[2];                                          \
             _d[0] = d1;                                         \
             _d[1] = d2;                                         \
             __trace_var(_e, 1, sizeof(_d), _d);                 \
@@ -85,7 +106,19 @@ void __trace_hypercall(uint32_t event, unsigned long op,
             __trace_var(_e, 1, sizeof(_d), _d);                 \
         }                                                       \
     } while ( 0 )
- 
+
+#define TRACE_3D_64(_e,d1,d2,d3)                                \
+    do {                                                        \
+        if ( unlikely(tb_init_done) )                           \
+        {                                                       \
+            u64 _d[3];                                          \
+            _d[0] = d1;                                         \
+            _d[1] = d2;                                         \
+            _d[2] = d3;                                         \
+            __trace_var(_e, 1, sizeof(_d), _d);                 \
+        }                                                       \
+    } while ( 0 )
+
 #define TRACE_4D(_e,d1,d2,d3,d4)                                \
     do {                                                        \
         if ( unlikely(tb_init_done) )                           \
