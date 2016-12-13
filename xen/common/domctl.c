@@ -27,6 +27,7 @@
 #include <xen/vm_event.h>
 #include <xen/monitor.h>
 #include <asm/current.h>
+#include <asm/processor.h>
 #include <asm/irq.h>
 #include <asm/page.h>
 #include <asm/p2m.h>
@@ -579,6 +580,8 @@ long do_domctl(XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl)
 
             rover = dom;
         }
+
+        printk("Physical Timer Value (D%u): %llu\n", dom, READ_SYSREG64(CNTPCT_EL0));
 
         if ( (op->u.createdomain.flags & XEN_DOMCTL_CDF_hvm_guest)
              && (op->u.createdomain.flags & XEN_DOMCTL_CDF_pvh_guest) )
