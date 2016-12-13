@@ -50,6 +50,7 @@
 #include <asm/setup.h>
 #include <xsm/xsm.h>
 #include <asm/acpi.h>
+#include <asm/dw_trace.h>
 
 struct bootinfo __initdata bootinfo;
 
@@ -62,6 +63,11 @@ bool_t __read_mostly acpi_disabled;
 #ifdef CONFIG_ARM_32
 static unsigned long opt_xenheap_megabytes __initdata;
 integer_param("xenheap_megabytes", opt_xenheap_megabytes);
+#endif
+
+#ifdef DW_TRACE
+    uint64_t __read_mostly xen_cstart_t;
+    uint64_t __read_mostly xen_done_t;
 #endif
 
 static __used void init_done(void)
@@ -718,6 +724,10 @@ void __init start_xen(unsigned long boot_phys_offset,
     struct domain *dom0;
     struct xen_arch_domainconfig config;
 
+#ifdef DW_TRACE
+    xen_cstart_t = get_cycles();
+#endif
+
     setup_cache();
 
     percpu_init_areas();
@@ -881,6 +891,11 @@ void __init start_xen(unsigned long boot_phys_offset,
      * since the static one we're running on is about to be freed. */
     memcpy(idle_vcpu[0]->arch.cpu_info, get_cpu_info(),
            sizeof(struct cpu_info));
+           
+#ifdef DW_TRACE
+    xen_done_t = get_cycles();
+    dw_print_boot_time();
+#endif
     switch_stack_and_jump(idle_vcpu[0]->arch.cpu_info, init_done);
 }
 

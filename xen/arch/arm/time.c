@@ -196,6 +196,13 @@ s_time_t get_s_time(void)
     return ticks_to_ns(ticks);
 }
 
+/* Return the number of ticks since boot */
+cycles_t get_cycles(void)
+{
+        /* return raw tick count of main timer */
+        return READ_SYSREG64(CNTPCT_EL0) - boot_count;
+}
+
 /* Set the timer to wake us up at a particular time.
  * Timeout is a Xen system time (nanoseconds since boot); 0 disables the timer.
  * Returns 1 on success; 0 if the timeout is too soon or is in the past. */
