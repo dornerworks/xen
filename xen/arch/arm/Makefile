@@ -48,6 +48,8 @@ obj-y += vm_event.o
 obj-y += vtimer.o
 obj-y += vpsci.o
 obj-y += vuart.o
+obj-y += dw_trace.o
+obj-$(CONFIG_LIVEPATCH) += livepatch.o
 
 #obj-bin-y += ....o
 
