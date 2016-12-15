@@ -3,6 +3,8 @@
 #include <asm/regs.h>
 #include <public/xen.h>
 
+.extern per_cpu__xzd_irq_start
+
 /*
  * Register aliases.
  */
@@ -94,7 +96,16 @@ lr      .req    x30             // link register
         .macro  entry, hyp, compat
         sub     sp, sp, #(UREGS_SPSR_el1 - UREGS_LR) /* CPSR, PC, SP, LR */
         push    x28, x29
+
+        mrs		x28, CNTPCT_EL0					// get the physical counter as soon as possible
+
         push    x26, x27
+
+        ldr		x29,=per_cpu__xzd_irq_start		// get the base of the per-cpu variable
+        mrs		x27, TPIDR_EL2					// determine the offset for this CPU
+        add		x29, x29, x27					// determine final address in memory
+        str		x28,[x29]						// store the counter into the calculated memory
+
         push    x24, x25
         push    x22, x23
         push    x20, x21
