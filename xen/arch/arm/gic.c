@@ -366,12 +366,66 @@ void gic_disable_cpu(void)
     gic_hw_ops->disable_interface();
 }
 
+#define NUM_IRQ_SAMPLES 500
+#define TARGET_CPU 3
+struct irq_perf{
+	u64 start;
+	u64 end;
+};
+typedef struct irq_perf irq_perf_t;
+
+DEFINE_PER_CPU(u64, xzd_irq_start);
+
+static irq_perf_t xzd_irq_data[NUM_IRQ_SAMPLES];		// stores start/end time for Xen to process the interrupt
+static DEFINE_PER_CPU(int, xzd_irq_being_handled);		// variable to match to ensure only recording time for interrupts
+														//  handled without a VM-context switch
+
+static int xzd_irq_count = 0;							// track number of IRQs record (circular buffer)
+static u8 xzd_irq_record = 1;							// enables/disables active data recordign
+
+#define mfcp(reg)	({u64 rval;\
+			__asm__ __volatile__("mrs	%0, " #reg : "=r" (rval));\
+			rval;\
+			})
+
+/*
+ * Handler for the hypercall -41. It copies the IRQ data into a buffer
+ * passed by the guest.
+ */
+long do_gic_irq_data(void* buffer)
+{
+	// turn off irq data recording during the copy
+	xzd_irq_record = 0;
+
+    raw_copy_to_guest((void*)(buffer), xzd_irq_data, NUM_IRQ_SAMPLES*sizeof(irq_perf_t));
+
+	// turn off irq data recording during the copy
+	xzd_irq_record = 1;
+
+	return 0;
+}
+
+
 static inline void gic_set_lr(int lr, struct pending_irq *p,
                               unsigned int state)
 {
-    ASSERT(!local_irq_is_enabled());
 
-    gic_hw_ops->update_lr(lr, p, state);
+ 	int cpu = get_processor_id();
+
+	ASSERT(!local_irq_is_enabled());
+
+    if(((this_cpu(xzd_irq_being_handled)) == p->irq) &&		// check that still in same context
+    		(0 != xzd_irq_record) &&		 				// check that recording isn't being supressed
+    		(TARGET_CPU == cpu))							// check for specific CPU
+    {
+    	xzd_irq_data[xzd_irq_count].start = this_cpu(xzd_irq_start);
+        xzd_irq_data[xzd_irq_count].end = mfcp(CNTPCT_EL0);
+        xzd_irq_count++;
+        xzd_irq_count %= NUM_IRQ_SAMPLES;
+    }
+
+	gic_hw_ops->update_lr(lr, p, state);
+
 
     set_bit(GIC_IRQ_GUEST_VISIBLE, &p->status);
     clear_bit(GIC_IRQ_GUEST_QUEUED, &p->status);
@@ -688,12 +742,14 @@ void gic_interrupt(struct cpu_user_regs *regs, int is_fiq)
     do  {
         /* Reading IRQ will ACK it */
         irq = gic_hw_ops->read_irq();
-
         if ( likely(irq >= 16 && irq < 1020) )
         {
-            local_irq_enable();
+        	this_cpu(xzd_irq_being_handled) = irq;			// track the IRQ # per CPU
+        	local_irq_enable();
             do_IRQ(regs, irq, is_fiq);
             local_irq_disable();
+
+            this_cpu(xzd_irq_being_handled) = -1;		// set to an invalid IRQ# so it won't match later
         }
         else if (unlikely(irq < 16))
         {
