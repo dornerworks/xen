@@ -1298,6 +1298,8 @@ typedef struct {
         .nr_args = _nr_args,                                    \
     }
 
+extern arm_hypercall_fn_t do_gic_irq_data;	// reference to new hypercall funct
+
 static arm_hypercall_t arm_hypercall_table[] = {
     HYPERCALL(memory_op, 2),
     HYPERCALL(domctl, 1),
@@ -1317,6 +1319,7 @@ static arm_hypercall_t arm_hypercall_table[] = {
     HYPERCALL(platform_op, 1),
     HYPERCALL_ARM(vcpu_op, 3),
     HYPERCALL(vm_assist, 2),
+    HYPERCALL(gic_irq_data, 1),				// new hypercall to get interrupt perf data
 };
 
 #ifndef NDEBUG
