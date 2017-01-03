@@ -36,6 +36,7 @@
 #include <asm/gic.h>
 #include <asm/vgic.h>
 #include <asm/acpi.h>
+#include <xen/irq_perf.h>
 
 static void gic_restore_pending_irqs(struct vcpu *v);
 
@@ -349,13 +350,6 @@ void gic_disable_cpu(void)
     gic_hw_ops->disable_interface();
 }
 
-#define NUM_IRQ_SAMPLES 500
-#define TARGET_CPU 3
-struct irq_perf{
-	u64 start;
-	u64 end;
-};
-typedef struct irq_perf irq_perf_t;
 
 DEFINE_PER_CPU(u64, xzd_irq_start);
 
@@ -402,7 +396,7 @@ static inline void gic_set_lr(int lr, struct pending_irq *p,
     		(TARGET_CPU == cpu))							// check for specific CPU
     {
     	xzd_irq_data[xzd_irq_count].start = this_cpu(xzd_irq_start);
-        xzd_irq_data[xzd_irq_count].end = mfcp(CNTPCT_EL0);
+        xzd_irq_data[xzd_irq_count].end = READ_SYSREG64(CNTPCT_EL0);
         xzd_irq_count++;
         xzd_irq_count %= NUM_IRQ_SAMPLES;
     }
