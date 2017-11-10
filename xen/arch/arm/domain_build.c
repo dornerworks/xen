@@ -1028,8 +1028,22 @@ static int map_range_to_domain(const struct dt_device_node *dev,
     bool_t need_mapping = !dt_device_for_passthrough(dev);
     int res;
 
-    res = iomem_permit_access(d, paddr_to_pfn(addr),
-                              paddr_to_pfn(PAGE_ALIGN(addr + len - 1)));
+    if(dt_get_property(dev,"xen,shared-mem",NULL))
+    {
+        printk("%x, %s mapped as NORMAL MEMORY\r\n");
+        res = map_regions_rw_cache(d,
+                            paddr_to_pfn(addr),
+                            DIV_ROUND_UP(len, PAGE_SIZE),
+                            paddr_to_pfn(addr));
+    }
+    else
+    {
+        res = map_mmio_regions(d,
+                           paddr_to_pfn(addr),
+                           DIV_ROUND_UP(len, PAGE_SIZE),
+                           paddr_to_pfn(addr));
+    }
+
     if ( res )
     {
         printk(XENLOG_ERR "Unable to permit to dom%d access to"
