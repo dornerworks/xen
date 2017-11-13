@@ -59,6 +59,10 @@ static const struct dt_device_match dev_map_attrs[] __initconst =
         __DT_MATCH_COMPATIBLE("mmio-sram"),
         .data = (void *) (uintptr_t) p2m_mmio_direct_nc,
     },
+    {
+        __DT_MATCH_PROP("xen,shared-mem"),
+        .data = (void *) (uintptr_t) p2m_ram_rw,
+    },
     { /* sentinel */ },
 };
 
