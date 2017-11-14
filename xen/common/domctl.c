@@ -1041,8 +1041,10 @@ long do_domctl(XEN_GUEST_HANDLE_PARAM(xen_domctl_t) u_domctl)
             printk(XENLOG_G_DEBUG
                    "memory_map:add: dom%d gfn=%lx mfn=%lx nr=%lx\n",
                    d->domain_id, gfn, mfn, nr_mfns);
-
-            ret = map_mmio_regions(d, _gfn(gfn), nr_mfns, _mfn(mfn));
+            if(mfn >= 0x3a000 && (mfn+nr_mfns) <= 0x40000)
+               ret = map_regions_p2mt(d, _gfn(gfn), nr_mfns, _mfn(mfn), p2m_mmio_direct_c);
+            else
+                ret = map_mmio_regions(d, _gfn(gfn), nr_mfns, _mfn(mfn));
             if ( ret < 0 )
                 printk(XENLOG_G_WARNING
                        "memory_map:fail: dom%d gfn=%lx mfn=%lx nr=%lx ret:%ld\n",
