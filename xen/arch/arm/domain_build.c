@@ -61,7 +61,7 @@ static const struct dt_device_match dev_map_attrs[] __initconst =
     },
     {
         __DT_MATCH_PROP("xen,shared-mem"),
-        .data = (void *) (uintptr_t) p2m_ram_rw,
+        .data = (void *) (uintptr_t) p2m_mmio_direct_c,
     },
     { /* sentinel */ },
 };
